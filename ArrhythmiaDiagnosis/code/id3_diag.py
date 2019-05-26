@@ -14,6 +14,13 @@ class Tree:
         self.splitFeatureValue = None
         self.splitFeature = None
 
+    def depth(self):
+        depths = [0]
+        child: Tree
+        for child in self.children:
+            depths.append(child.depth)
+        return max(depths) + 1
+
 
 def dataToDistribution(data):
     allLabels = [label for (point, label) in data]
@@ -139,25 +146,17 @@ def testClassification(data, tree):
     return float(sum(correct_labels)) / len(actual_labels)
 
 
-def treeDepth(tree):
-    depths = [0]
-    for child in tree.children:
-        depths.append(treeDepth(child))
-    return max(depths) + 1
-
-
 def main():
-    with open('C:/Users/Vuks/PycharmProjects/AI_Diagnosis/ArrhythmiaDiagnosis/data/arrhythmia.data', 'r') as inputFile:
+    with open('../data/arrhythmia.data', 'r') as inputFile:
         lines = inputFile.readlines()
 
     data = [line.strip().split(',') for line in lines]
     data = [(row[0:-1], row[-1]) for row in data]
-
     tree = decisionTree(data)
 
     # testowanie
     print(testClassification(data, tree))
-    print(treeDepth(tree))
+    print(tree.depth())
 
 
 if __name__ == '__main__':
