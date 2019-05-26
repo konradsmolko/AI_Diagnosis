@@ -16,8 +16,6 @@ class Tree:
 
 
 def dataToDistribution(data):
-    """ Turn a dataset which has n possible classification labels into a
-        probability distribution with n entries. """
     allLabels = [label for (point, label) in data]
 
     numEntries = len(allLabels)
@@ -31,20 +29,13 @@ def dataToDistribution(data):
 
 
 def entropy(dist):
-    """ Compute the Shannon entropy of the given probability distribution. """
     return -sum([p * math.log(p, 2) for p in dist])
 
 
 def splitData(data, featureIndex):
-    """ Iterate over the subsets of data corresponding to each value
-        of the feature at the index featureIndex. """
-
-    # get possible values of the given feature
-
     attrValues = [point[featureIndex] for (point, label) in data]
 
     for aValue in set(attrValues):
-        # compute the piece of the split corresponding to the chosen value
         dataSubset = [(point, label) for (point, label) in data
                       if point[featureIndex] == aValue]
 
@@ -52,9 +43,6 @@ def splitData(data, featureIndex):
 
 
 def gain(data, featureIndex):
-    """ Compute the expected gain from splitting the data along all possible
-        values of feature. """
-
     entropyGain = entropy(dataToDistribution(data))
 
     for dataSubset in splitData(data, featureIndex):
@@ -64,12 +52,10 @@ def gain(data, featureIndex):
 
 
 def homogeneous(data):
-    """ Return True if the data have the same label, and False otherwise. """
     return len(set([label for (point, label) in data])) <= 1
 
 
 def majorityVote(data, node):
-    """ Label node with the majority of the class labels in the given data set. """
     labels = [label for (pt, label) in data]
     choice = max(set(labels), key=labels.count)
     node.label = choice
@@ -79,9 +65,6 @@ def majorityVote(data, node):
 
 
 def buildDecisionTree(data, root, remainingFeatures):
-    """ Build a decision tree from the given data, appending the children
-        to the given root node (which may be the root of a subtree). """
-
     if homogeneous(data):
         root.label = data[0][1]
         root.classCounts = {root.label: len(data)}
@@ -113,23 +96,7 @@ def decisionTree(data):
     return buildDecisionTree(data, Tree(), set(range(len(data[0][0]))))
 
 
-def classify(tree, point):
-    """ Classify a data point by traversing the given decision tree. """
-
-    if not tree.children:
-        return tree.label
-    else:
-        matchingChildren = [child for child in tree.children
-                            if child.splitFeatureValue == point[tree.splitFeature]]
-
-        if len(matchingChildren) == 0:
-            raise Exception("Classify is not able to handle noisy data. Use classify2 instead.")
-
-        return classify(matchingChildren[0], point)
-
-
 def dictionarySum(*dicts):
-    """ Return a key-wise sum of a list of dictionaries with numeric values. """
     sumDict = {}
 
     for aDict in dicts:
@@ -142,31 +109,21 @@ def dictionarySum(*dicts):
     return sumDict
 
 
-def classifyNoisy(tree, point):
-    """ Classify a noisy data point by traversing the given decision tree.
-        Return a dictionary of the appropriate class counts to account for
-        multiple branching. """
-
+def predictRecursive(tree, point):
     if not tree.children:
         return tree.classCounts
     elif point[tree.splitFeature] == '?':
-        dicts = [classifyNoisy(child, point) for child in tree.children]
+        dicts = [predictRecursive(child, point) for child in tree.children]
         return dictionarySum(*dicts)
     else:
         matchingChildren = [child for child in tree.children
                             if child.splitFeatureValue == point[tree.splitFeature]]
 
-        return classifyNoisy(matchingChildren[0], point)
+        return predictRecursive(matchingChildren[0], point)
 
 
-def classify2(tree, point):
-    """ Classify data which is assumed to have the possibility of being noisy.
-        Return the label corresponding to the maximum among all possible
-        continuations of the tree traversal. That is, the maximum of the
-        class counts at the leaves. Classify2 is equivalent to classify
-        if the data are not noisy. If the data are noisy, classify will
-        raise an error. """
-    counts = classifyNoisy(tree, point)
+def predict(tree, point):
+    counts = predictRecursive(tree, point)
 
     if len(counts.keys()) == 1:
         return max(counts.keys())
@@ -174,26 +131,16 @@ def classify2(tree, point):
         return max(counts.keys(), key=lambda k: counts[k])
 
 
-def testClassification(data, tree, classifier=classify2):
-    """ Test the classification accuracy of the decision tree on the given data set.
-        Optinally choose the classifier to be classify or classify2. """
-    actualLabels = [label for point, label in data]
-    predictedLabels = [classifier(tree, point) for point, label in data]
+def testClassification(data, tree):
+    actual_labels = [label for _, label in data]
+    predicted_labels = [predict(tree, row) for row, _ in data]
 
-    correctLabels = [(1 if a == b else 0) for a, b in zip(actualLabels, predictedLabels)]
-    return float(sum(correctLabels)) / len(actualLabels)
-
-
-def testTreeSize(noisyData, cleanData):
-    import random
-
-    for i in range(1, len(cleanData)):
-        tree = decisionTree(random.sample(cleanData, i))
-        print(str(testClassification(noisyData, tree)) + ", ", )
+    correct_labels = [(1 if a == b else 0) for a, b in zip(actual_labels, predicted_labels)]
+    return float(sum(correct_labels)) / len(actual_labels)
 
 
 def main():
-    with open('../data/arrhythmia.data', 'r') as inputFile:
+    with open('C:/Users/Vuks/PycharmProjects/AI_Diagnosis/ArrhythmiaDiagnosis/data/arrhythmia.data', 'r') as inputFile:
         lines = inputFile.readlines()
 
     data = [line.strip().split(',') for line in lines]
@@ -202,22 +149,8 @@ def main():
     tree = decisionTree(data)
 
     # testowanie
-    correct = 0
-    for row in data:
-        guess = classify2(tree, row[0])
-        if guess == row[1]:
-            # print(guess, row[1], "OK")
-            correct += 1
-        # else:
-        #     print(guess, row[1], "BAD")
-    perc = float(correct/len(data) * 100)
-    print(perc, "%")
+    testClassification(data, tree)
 
 
 if __name__ == '__main__':
     main()
-# This Last print statment prints the type of Disease causes by combination of given symptoms
-# The values 'y' and 'n' corresponds to the symptoms if present then 'y' , if not then 'n'
-# The symptoms types are Harcoded in the Decision Tree and if the corresponding symptom is present then
-# its flag is made 'y' else 'n'
-# The combination of above symptoms encoded as 'y' and 'n'  correspond to the dieases known as Cholera
