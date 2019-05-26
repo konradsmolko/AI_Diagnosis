@@ -139,6 +139,13 @@ def testClassification(data, tree):
     return float(sum(correct_labels)) / len(actual_labels)
 
 
+def treeDepth(tree):
+    depths = [0]
+    for child in tree.children:
+        depths.append(treeDepth(child))
+    return max(depths) + 1
+
+
 def main():
     with open('C:/Users/Vuks/PycharmProjects/AI_Diagnosis/ArrhythmiaDiagnosis/data/arrhythmia.data', 'r') as inputFile:
         lines = inputFile.readlines()
@@ -149,7 +156,8 @@ def main():
     tree = decisionTree(data)
 
     # testowanie
-    testClassification(data, tree)
+    print(testClassification(data, tree))
+    print(treeDepth(tree))
 
 
 if __name__ == '__main__':
