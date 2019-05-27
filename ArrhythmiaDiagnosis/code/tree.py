@@ -16,8 +16,14 @@ class Tree:
 
         return max(depths) + 1
 
+    def dep(self):
+        if self.parent is None:
+            return 1
+        else:
+            return self.parent.depth() + 1
+
     def print(self):
-        tabs = " " * (27 - self.depth())
+        tabs = " " * (27 - self.dep())
         print(tabs, self.label, self.classCounts, self.splitFeature, self.splitFeatureValue)
         for child in self.children:
             child.print()
