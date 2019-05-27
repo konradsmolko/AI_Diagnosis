@@ -1,42 +1,35 @@
-import math
+from math import log
 from ArrhythmiaDiagnosis.code.tree import Tree
 
 
-def dataToDistribution(data) -> [float]:
-    """ Turn a dataset which has n possible classification labels into a
-        probability distribution with n entries. """
-    all_attrs = [attr for _, attr in data]
+def dataToDistribution(data):
+    allLabels = [label for (point, label) in data]
 
-    num_entries = len(all_attrs)
+    numEntries = len(allLabels)
 
-    possibleLabels = set(all_attrs)
+    possibleLabels = set(allLabels)
     dist = []
     for aLabel in possibleLabels:
-        dist.append(float(all_attrs.count(aLabel)) / num_entries)
+        dist.append(float(allLabels.count(aLabel)) / numEntries)
 
     return dist
 
 
-def entropy(dist) -> float:
-    return -sum([p * math.log(p, 2) for p in dist])
+def entropy(dist):
+    return -sum([p * log(p, 2) for p in dist])
 
 
-def majorityVote(data, node: Tree) -> Tree:
-    attrs = [attr for _, attr in data]
-    choice = max(set(attrs), key=attrs.count)
-    node.label = choice
-    node.classCounts = dict([(label, attrs.count(label)) for label in set(attrs)])
+def splitData(data, featureIndex):
+    attrValues = [point[featureIndex] for (point, label) in data]
 
-    return node
+    for aValue in set(attrValues):
+        dataSubset = [(point, label) for (point, label) in data
+                      if point[featureIndex] == aValue]
+
+        yield dataSubset
 
 
-def homogenous(data):
-    return len(set([row[-1] for row in data])) <= 1
-
-# TODO: c45 tree testing
-
-# TODO: c45 tree building
-def gain(data, index):
+def gain(data, featureIndex):
     entropyGain = entropy(dataToDistribution(data))
 
     for dataSubset in splitData(data, featureIndex):
@@ -45,48 +38,89 @@ def gain(data, index):
     return entropyGain
 
 
-def c45(data, root, remaining_features) -> Tree:
-    if homogenous(data):
+def homogeneous(data):
+    return len(set([label for (point, label) in data])) <= 1
+
+
+def majorityVote(data, node):
+    labels = [label for (pt, label) in data]
+    choice = max(set(labels), key=labels.count)
+    node.label = choice
+    node.classCounts = dict([(label, labels.count(label)) for label in set(labels)])
+
+    return node
+
+
+def buildDecisionTree(data, root, remainingFeatures):
+    if homogeneous(data):
+        root.label = data[0][1]
+        root.classCounts = {root.label: len(data)}
         return root
-    if len(remaining_features) == 0:
+
+    if len(remainingFeatures) == 0:
         return majorityVote(data, root)
 
     # find the index of the best feature to split on
-    best_feature = max(remaining_features, key=lambda index: gain(data, index))
+    bestFeature = max(remainingFeatures, key=lambda index: gain(data, index))
 
-# TODO: c45 tree building
-from ArrhythmiaDiagnosis.code.tree import Tree
+    if gain(data, bestFeature) == 0:
+        return majorityVote(data, root)
 
+    root.splitFeature = bestFeature
 
-def c45(data, attributes):
-    if pure(data) or (other stopping criteria):
-        return
-    criteria = []
-    for attr in attributes:
-        criteria.append(compute_criteria(attr))
-    crt = select_best_criteria(criteria)
-    tree = DecisionNode(crt)
-    sub_data = induced subdatasets from data based on crt
-    for sub in sub_data:
-        node = c45(sub,attributes - crt)
-        tree.add node
-    return tree
+    # add child nodes and process recursively
+    for dataSubset in splitData(data, bestFeature):
+        aChild = Tree(parent=root)
+        aChild.splitFeatureValue = dataSubset[0][0][bestFeature]
+        root.children.append(aChild)
 
-def entropy(dist) -> float:
-    return -sum([p * math.log(p, 2) for p in dist])
+        buildDecisionTree(dataSubset, aChild, remainingFeatures - {bestFeature})
 
-# def gain(data,)
+    return root
 
 
-def buildDecisionTree(data, root, remainingClassifications):
-    pass
-
-
-def homogeneous(data):
-    return len(set([row[-1] for row in data])) <= 1
-
-
-def decisionTree(data: [(list, int)]):
+def decisionTree(data):
     return buildDecisionTree(data, Tree(), set(range(len(data[0][0]))))
 
-# TODO: c45 tree testing
+
+def sumDicts(*dicts):
+    sumDict = {}
+
+    for aDict in dicts:
+        for key in aDict:
+            if key in sumDict:
+                sumDict[key] += aDict[key]
+            else:
+                sumDict[key] = aDict[key]
+
+    return sumDict
+
+
+def predictRecursive(tree, point):
+    if not tree.children:
+        return tree.classCounts
+    elif point[tree.splitFeature] == '?':
+        dicts = [predictRecursive(child, point) for child in tree.children]
+        return sumDicts(*dicts)
+    else:
+        matchingChildren = [child for child in tree.children
+                            if child.splitFeatureValue == point[tree.splitFeature]]
+
+        return predictRecursive(matchingChildren[0], point)
+
+
+def predict(tree, point):
+    counts = predictRecursive(tree, point)
+
+    if len(counts.keys()) == 1:
+        return max(counts.keys())
+    else:
+        return max(counts.keys(), key=lambda k: counts[k])
+
+
+def test(data, tree):
+    actual_labels = [label for _, label in data]
+    predicted_labels = [predict(tree, row) for row, _ in data]
+
+    correct_labels = [(1 if a == b else 0) for a, b in zip(actual_labels, predicted_labels)]
+    return float(sum(correct_labels)) / len(actual_labels)

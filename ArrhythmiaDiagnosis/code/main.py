@@ -1,31 +1,26 @@
-import ArrhythmiaDiagnosis.code.dataIO as io
-from ArrhythmiaDiagnosis.code.ai_logic import c45
+from ArrhythmiaDiagnosis.code.dataIO import read_data
+from ArrhythmiaDiagnosis.code.ai_logic import decisionTree, test, predict
+
 
 def main():
-    filename = "../data/arrhythmia_teach.data"
-    data: [(list, int)] = io.read_data(filename)
+    data = read_data('../data/arrhythmia.data')
+    tree = decisionTree(data)
 
-    tree = c45(data)
-
-    # linear = "linear"
-    # nominal = "nominal"
-    # valuetypes = ["n"] * 280
-    # valuetypes[0] = linear
-    # valuetypes[1] = nominal
-    # for i in range(2, 21):
-    #     valuetypes[i] = linear
-    # for i in range(21, 27):
-    #     valuetypes[i] = nominal
-    # for i in range(27, 279):
-    #     valuetypes[i] = linear
-    # valuetypes[279] = "classification"
-
-    # results = ["n"] * 16
-    # results[0] = "normal"
-    # for i in range(1, 15):
-    #     results[i] = "arrythmia class " + i.__str__()
-    # results[15] = "unclassified"
-    return
+    # testowanie
+    # print(test(data[0:50], tree))
+    # print(test(data[50:100], tree))
+    # print(test(data[100:150], tree))
+    # print(test(data[150:200], tree))
+    # print(test(data[200:250], tree))
+    # print(test(data[250:300], tree))
+    # print(test(data[250:300], tree))
+    # print(test(data[300:350], tree))
+    # print(test(data[350:400], tree))
+    # print(test(data[400:], tree))
+    # print(predict(tree, data[0][0]))
+    # print(data[0][1])
+    print(test(data, tree))
+    print(tree.depth())
 
 
 if __name__ == '__main__':

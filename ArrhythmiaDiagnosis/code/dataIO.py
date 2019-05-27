@@ -1,22 +1,12 @@
 import pickle
 
 
-def read_data(filename: str) -> [(list, int)]:
+def read_data(filename: str):
     with open(filename, 'r') as inputFile:
         lines = inputFile.readlines()
 
-    data = []
-    for raw_row in [line.strip().split(',') for line in lines]:
-        row = []
-        for item in raw_row:
-            if item.__contains__('.'):
-                row.append(float(item))
-            elif item.__eq__('?'):
-                row.append(None)
-            else:
-                row.append(int(item))
-        attr = row.pop(-1)
-        data.append((row, attr))
+    data = [line.strip().split(',') for line in lines]
+    data = [(row[0:-1], row[-1]) for row in data]
 
     return data
 
