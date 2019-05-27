@@ -15,3 +15,9 @@ class Tree:
             depths.append(child.depth())
 
         return max(depths) + 1
+
+    def print(self):
+        tabs = " " * (27 - self.depth())
+        print(tabs, self.label, self.classCounts, self.splitFeature, self.splitFeatureValue)
+        for child in self.children:
+            child.print()
