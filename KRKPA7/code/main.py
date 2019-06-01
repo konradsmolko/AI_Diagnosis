@@ -1,5 +1,5 @@
-from ArrhythmiaDiagnosis.code.dataIO import read_data
-from ArrhythmiaDiagnosis.code.ai_logic import decisionTree, test, predict
+from KRKPA7.code.dataIO import read_data
+from KRKPA7.code.ai_logic import decisionTree, test, predict
 
 
 def main():

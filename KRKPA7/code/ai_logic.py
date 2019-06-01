@@ -1,5 +1,5 @@
 from math import log
-from ArrhythmiaDiagnosis.code.tree import Tree
+from KRKPA7.code.tree import Tree
 
 
 def dataToDistribution(data):
